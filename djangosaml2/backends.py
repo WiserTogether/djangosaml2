@@ -158,7 +158,7 @@ class Saml2Backend(ModelBackend):
             return user
 
         try:
-            profile = user.get_profile()
+            profile = user.profile
         except ObjectDoesNotExist:
             profile = None
         except SiteProfileNotAvailable:
