@@ -18,17 +18,29 @@ import os.path
 import saml2
 
 
-def create_conf(sp_host='sp.example.com', idp_hosts=['idp.example.com']):
+def create_conf(sp_host='sp.example.com', idp_hosts=['idp.example.com'],
+                metadata_file='remote_metadata.xml'):
+
+    try:
+        from saml2.sigver import get_xmlsec_binary
+    except ImportError:
+        get_xmlsec_binary = None
+
+    if get_xmlsec_binary:
+        xmlsec_path = get_xmlsec_binary(["/opt/local/bin"])
+    else:
+        xmlsec_path = '/usr/bin/xmlsec1'
 
     BASEDIR = os.path.dirname(os.path.abspath(__file__))
     config = {
-        'xmlsec_binary': '/usr/bin/xmlsec1',
+        'xmlsec_binary': xmlsec_path,
         'entityid': 'http://%s/saml2/metadata/' % sp_host,
         'attribute_map_dir': os.path.join(BASEDIR, 'attribute-maps'),
 
         'service': {
             'sp': {
                 'name': 'Test SP',
+                'name_id_format': saml2.saml.NAMEID_FORMAT_PERSISTENT,
                 'endpoints': {
                     'assertion_consumer_service': [
                         ('http://%s/saml2/acs/' % sp_host,
@@ -46,7 +58,7 @@ def create_conf(sp_host='sp.example.com', idp_hosts=['idp.example.com']):
             },
 
         'metadata': {
-            'local': [os.path.join(BASEDIR, 'remote_metadata.xml')],
+            'local': [os.path.join(BASEDIR, metadata_file)],
             },
 
         'debug': 1,
@@ -74,6 +86,7 @@ def create_conf(sp_host='sp.example.com', idp_hosts=['idp.example.com']):
             'url': [('http://www.example.es', 'es'),
                     ('http://www.example.com', 'en')],
             },
+        'valid_for': 24,
         }
 
     for idp in idp_hosts:
